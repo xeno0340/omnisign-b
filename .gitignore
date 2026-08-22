@@ -28,6 +28,22 @@ Thumbs.db
 emotion_app.zip
 
 ####################################
+# Datasets (regeneratable / downloadable from source)
+####################################
+data/
+
+####################################
+# Third-party cloned repo (reference only, not our code)
+####################################
+hand-gesture-recognition-mediapipe/
+
+####################################
+# Large local LLM model files
+####################################
+models/
+*.gguf
+
+####################################
 # Logs
 ####################################
 *.log

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniSign — Real-time ISL Translator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a14; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+  header { background: #12121f; border-bottom: 1px solid #2a2a4a; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 20px; font-weight: 700; color: #7c6fff; letter-spacing: 1px; }
+  .logo span { color: #fff; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #2a2a4a; display: inline-block; margin-right: 6px; transition: background 0.3s; }
+  .status-dot.connected { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+  .status-text { font-size: 12px; color: #888; }
+  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; height: calc(100vh - 56px); }
+  .panel { background: #12121f; border: 1px solid #2a2a4a; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+  .panel-header { padding: 10px 16px; border-bottom: 1px solid #2a2a4a; font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; }
+  .panel-body { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px; overflow: hidden; }
+  .emotion-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #1e1e35; color: #7c6fff; border: 1px solid #3a3a6a; transition: all 0.3s; }
+  .emotion-badge.happy { background: #1a3320; color: #4ade80; border-color: #4ade80; }
+  .emotion-badge.sad { background: #1a2535; color: #60a5fa; border-color: #60a5fa; }
+  .emotion-badge.angry { background: #351a1a; color: #f87171; border-color: #f87171; }
+  .emotion-badge.surprised { background: #35301a; color: #fbbf24; border-color: #fbbf24; }
+  .emotion-badge.neutral { background: #1e1e35; color: #a78bfa; border-color: #a78bfa; }
+  .transcript-box { flex: 1; background: #0a0a14; border: 1px solid #2a2a4a; border-radius: 8px; padding: 14px; overflow-y: auto; min-height: 100px; }
+  .transcript-line { padding: 5px 0; border-bottom: 1px solid #1a1a2e; font-size: 13px; line-height: 1.5; animation: fadeIn 0.3s ease; }
+  .transcript-line:last-child { border-bottom: none; }
+  .transcript-line .time { font-size: 10px; color: #444; margin-right: 8px; }
+  .transcript-line .sign-text { color: #e0e0ff; }
+  .transcript-line .emotion-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #1e1e35; color: #7c6fff; margin-left: 6px; }
+  .current-sign { background: #0a0a14; border: 1px solid #3a3a6a; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .sign-letter { font-size: 48px; font-weight: 700; color: #7c6fff; min-width: 60px; text-align: center; line-height: 1; transition: all 0.2s; }
+  .sign-info { flex: 1; }
+  .sign-label { font-size: 11px; color: #666; margin-bottom: 2px; }
+  .sign-sentence { font-size: 14px; color: #e0e0ff; }
+  .stats-row { display: flex; gap: 8px; }
+  .stat-box { flex: 1; background: #0a0a14; border: 1px solid #2a2a4a; border-radius: 8px; padding: 8px 12px; text-align: center; }
+  .stat-num { font-size: 22px; font-weight: 700; color: #7c6fff; }
+  .stat-lbl { font-size: 10px; color: #666; margin-top: 2px; }
+  .text-input-row { display: flex; gap: 8px; }
+  .text-input { flex: 1; background: #0a0a14; border: 1px solid #2a2a4a; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .text-input:focus { border-color: #7c6fff; }
+  .btn { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: #7c6fff; color: #fff; }
+  .btn-primary:hover { background: #6c5fee; }
+  .btn-danger { background: #f87171; color: #fff; }
+  .btn-danger:hover { background: #ef4444; }
+  .avatar-wrap { flex: 1; background: #0a0a14; border: 1px solid #2a2a4a; border-radius: 8px; position: relative; overflow: hidden; min-height: 200px; }
+  #avatarCanvas { width: 100%; height: 100%; display: block; }
+  .gloss-display { background: #0a0a14; border: 1px solid #2a2a4a; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #888; min-height: 40px; max-height: 60px; overflow-y: auto; }
+  .gloss-token { display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; background: #1e1e35; color: #a78bfa; font-size: 12px; border: 1px solid #3a3a6a; transition: all 0.3s; }
+  .gloss-token.active { background: #7c6fff; color: #fff; border-color: #7c6fff; transform: scale(1.1); }
+  .gloss-token.word { background: #1a3320; color: #4ade80; border-color: #4ade80; }
+  .emergency-overlay { display: none; position: fixed; inset: 0; background: rgba(239,68,68,0.15); border: 4px solid #f87171; z-index: 100; pointer-events: none; }
+  .emergency-overlay.active { display: block; animation: pulse 0.5s infinite alternate; }
+  .emergency-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 32px; font-weight: 700; color: #f87171; text-shadow: 0 0 20px #f87171; }
+  .lang-select { background: #0a0a14; border: 1px solid #2a2a4a; border-radius: 6px; color: #fff; padding: 4px 8px; font-size: 12px; outline: none; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pulse { from { border-color:#f87171; } to { border-color:#fca5a5; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Omni<span>Sign</span> <span style="font-size:11px;color:#555;font-weight:400;margin-left:8px;">Real-time ISL Translator</span></div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <select class="lang-select" id="langSelect"><option value="English">English</option><option value="Hindi">Hindi</option></select>
+    <div><span class="status-dot" id="statusDot"></span><span class="status-text" id="statusText">Connecting...</span></div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-header">
+      <span>Direction 1 — Sign → Text → Speech</span>
+      <span class="emotion-badge" id="emotionBadge">Neutral</span>
+    </div>
+    <div class="panel-body">
+      <div class="current-sign">
+        <div class="sign-letter" id="currentLetter">—</div>
+        <div class="sign-info">
+          <div class="sign-label">Last spoken</div>
+          <div class="sign-sentence" id="currentSentence">Waiting for signs...</div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="signCount">0</div><div class="stat-lbl">Signs detected</div></div>
+        <div class="stat-box"><div class="stat-num" id="sentenceCount">0</div><div class="stat-lbl">Sentences spoken</div></div>
+        <div class="stat-box"><div class="stat-num" id="emotionCount">—</div><div class="stat-lbl">Emotion</div></div>
+      </div>
+      <div style="font-size:11px;color:#666;padding:0 2px">Transcript</div>
+      <div class="transcript-box" id="transcriptBox">
+        <div class="transcript-line"><span class="sign-text" style="color:#444">Signs will appear here...</span></div>
+      </div>
+      <button class="btn btn-danger" onclick="triggerEmergency()" style="width:100%">🚨 Emergency Alert</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span>Direction 2 — Text → ISL Avatar</span>
+      <span id="avatarStatus" style="font-size:11px;color:#666">Loading poses...</span>
+    </div>
+    <div class="panel-body">
+      <div class="text-input-row">
+        <input class="text-input" id="textInput" placeholder="Type a sentence to translate to ISL..." />
+        <button class="btn btn-primary" onclick="translateText()">Translate</button>
+      </div>
+      <div class="gloss-display" id="glossDisplay">ISL gloss will appear here...</div>
+      <div class="avatar-wrap">
+        <canvas id="avatarCanvas"></canvas>
+      </div>
+      <div style="font-size:11px;color:#666;text-align:center" id="avatarLabel">3D Hand Avatar — Real dataset poses</div>
+    </div>
+  </div>
+</div>
+
+<div class="emergency-overlay" id="emergencyOverlay">
+  <div class="emergency-text">⚠ EMERGENCY ALERT</div>
+</div>
+
+<script>
+// ─── WebSocket ──────────────────────────────────────────
+let ws = null;
+let signCount = 0, sentenceCount = 0;
+
+function connect() {
+  ws = new WebSocket('ws://localhost:8001/ws');
+  ws.onopen = () => {
+    document.getElementById('statusDot').classList.add('connected');
+    document.getElementById('statusText').textContent = 'Connected';
+  };
+  ws.onclose = () => {
+    document.getElementById('statusDot').classList.remove('connected');
+    document.getElementById('statusText').textContent = 'Reconnecting...';
+    setTimeout(connect, 2000);
+  };
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'sign') handleSign(data);
+    else if (data.type === 'gloss') handleGloss(data);
+    else if (data.type === 'emergency') handleEmergency();
+  };
+}
+connect();
+
+function handleSign(data) {
+  signCount++; sentenceCount++;
+  document.getElementById('signCount').textContent = signCount;
+  document.getElementById('sentenceCount').textContent = sentenceCount;
+  const letter = (data.signs[data.signs.length-1] || '—').toUpperCase();
+  document.getElementById('currentLetter').textContent = letter;
+  document.getElementById('currentSentence').textContent = data.text;
+  const emotion = data.emotion || 'neutral';
+  const badge = document.getElementById('emotionBadge');
+  badge.textContent = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+  badge.className = 'emotion-badge ' + emotion;
+  document.getElementById('emotionCount').textContent = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+  addTranscript(data.text, emotion);
+  if (HAND_POSES[letter]) animateToSign(letter);
+}
+
+function addTranscript(text, emotion) {
+  const box = document.getElementById('transcriptBox');
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  const line = document.createElement('div');
+  line.className = 'transcript-line';
+  line.innerHTML = `<span class="time">${time}</span><span class="sign-text">${text}</span><span class="emotion-tag">${emotion}</span>`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+  while (box.children.length > 50) box.removeChild(box.firstChild);
+}
+
+async function translateText() {
+  const text = document.getElementById('textInput').value.trim();
+  if (!text) return;
+  document.getElementById('avatarStatus').textContent = 'Translating...';
+  try {
+    const res = await fetch('http://localhost:8001/text-to-gloss', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text})
+    });
+    const data = await res.json();
+    handleGloss(data);
+  } catch(e) {
+    document.getElementById('avatarStatus').textContent = 'Error';
+  }
+}
+
+function expandGloss(gloss) {
+  // Expand words not in dataset to individual letters
+  const expanded = [];
+  gloss.forEach(token => {
+    const upper = token.toUpperCase();
+    if (HAND_POSES[upper]) {
+      // Known sign — use directly
+      expanded.push({ label: upper, isWord: true });
+    } else {
+      // Spell it out letter by letter
+      upper.split('').forEach(letter => {
+        if (HAND_POSES[letter]) {
+          expanded.push({ label: letter, isWord: false });
+        }
+      });
+    }
+  });
+  return expanded;
+}
+
+function handleGloss(data) {
+  const gloss = data.gloss || [];
+  const expanded = expandGloss(gloss);
+
+  const display = document.getElementById('glossDisplay');
+  display.innerHTML = expanded.map((item, i) =>
+    `<span class="gloss-token ${item.isWord ? 'word' : ''}" id="gloss-${i}">${item.label}</span>`
+  ).join('');
+
+  document.getElementById('avatarStatus').textContent = `Signing ${expanded.length} signs`;
+  animateGloss(expanded.map(item => item.label));
+}
+
+function triggerEmergency() {
+  fetch('http://localhost:8001/emergency', {method:'POST'});
+  handleEmergency();
+}
+
+function handleEmergency() {
+  const o = document.getElementById('emergencyOverlay');
+  o.classList.add('active');
+  setTimeout(() => o.classList.remove('active'), 4000);
+}
+
+// ─── 3D Avatar ──────────────────────────────────────────
+const canvas = document.getElementById('avatarCanvas');
+const ctx = canvas.getContext('2d');
+let HAND_POSES = {};
+let currentPose = null;
+let isAnimating = false;
+
+function resizeCanvas() {
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  if (currentPose) draw3DHand(currentPose, '');
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+async function loadPoses() {
+  try {
+    const res = await fetch('http://localhost:8001/poses');
+    HAND_POSES = await res.json();
+    document.getElementById('avatarStatus').textContent = `${Object.keys(HAND_POSES).length} signs loaded`;
+    currentPose = HAND_POSES['B'] || Object.values(HAND_POSES)[0];
+    draw3DHand(currentPose, 'B');
+  } catch(e) {
+    document.getElementById('avatarStatus').textContent = 'Could not load poses';
+  }
+}
+loadPoses();
+
+const CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17]
+];
+
+function draw3DHand(pose, label) {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Background grid
+  ctx.strokeStyle = 'rgba(124,111,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+  for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+  if (!pose || pose.length < 21) return;
+
+  const xs = pose.map(p => p[0]);
+  const ys = pose.map(p => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const scale = Math.min(w * 0.72 / rangeX, h * 0.72 / rangeY);
+  const cx = w / 2, cy = h / 2 + 20;
+
+  function project(p) {
+    const x = cx + (p[0] - (minX + maxX)/2) * scale;
+    const y = cy + (p[1] - (minY + maxY)/2) * scale;
+    const z = p[2] || 0;
+    return { x, y, z };
+  }
+
+  const pts = pose.map(project);
+
+  // Draw connections with depth shading
+  CONNECTIONS.forEach(([a, b]) => {
+    const pa = pts[a], pb = pts[b];
+    const depth = (pa.z + pb.z) / 2;
+    const alpha = Math.max(0.4, Math.min(1.0, 0.6 + depth * 3));
+    const gradient = ctx.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
+    gradient.addColorStop(0, `rgba(124,111,255,${alpha})`);
+    gradient.addColorStop(1, `rgba(80,180,255,${alpha})`);
+    ctx.beginPath();
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 3 + depth * 2;
+    ctx.lineJoin = 'round';
+    ctx.moveTo(pa.x, pa.y);
+    ctx.lineTo(pb.x, pb.y);
+    ctx.stroke();
+  });
+
+  // Draw joints
+  pts.forEach((p, i) => {
+    const isTip = [4,8,12,16,20].includes(i);
+    const isWrist = i === 0;
+    const size = isWrist ? 9 : isTip ? 7 : 5;
+
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size + 5, 0, Math.PI * 2);
+    ctx.fillStyle = isWrist ? 'rgba(255,200,100,0.1)' : isTip ? 'rgba(100,220,255,0.1)' : 'rgba(180,160,255,0.08)';
+    ctx.fill();
+
+    // Inner dot
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+    if (isWrist) ctx.fillStyle = 'rgba(255,200,100,1)';
+    else if (isTip) ctx.fillStyle = 'rgba(100,220,255,1)';
+    else ctx.fillStyle = 'rgba(180,160,255,0.9)';
+    ctx.fill();
+  });
+
+  // Sign label at top
+  if (label) {
+    ctx.font = 'bold 40px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(124,111,255,0.95)';
+    ctx.fillText(label, w/2, 48);
+  }
+}
+
+function lerp(a, b, t) { return a + (b-a)*t; }
+function lerpPose(from, to, t) {
+  return from.map((p,i) => [
+    lerp(p[0], to[i][0], t),
+    lerp(p[1], to[i][1], t),
+    lerp(p[2]||0, to[i][2]||0, t)
+  ]);
+}
+function easeInOut(t) { return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+function animateToSign(sign) {
+  const target = HAND_POSES[sign];
+  if (!target) return;
+  const from = currentPose ? JSON.parse(JSON.stringify(currentPose)) : target;
+  const start = performance.now();
+  const duration = 350;
+
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const interp = lerpPose(from, target, easeInOut(t));
+    draw3DHand(interp, sign);
+    if (t < 1) requestAnimationFrame(step);
+    else currentPose = target;
+  }
+  requestAnimationFrame(step);
+}
+
+async function animateGloss(signs) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  for (let i = 0; i < signs.length; i++) {
+    const sign = signs[i];
+    document.querySelectorAll('.gloss-token').forEach(t => t.classList.remove('active'));
+    const token = document.getElementById(`gloss-${i}`);
+    if (token) token.classList.add('active');
+    document.getElementById('avatarLabel').textContent = `Signing: ${sign}`;
+    animateToSign(sign);
+    // Shorter pause for letters, longer for words
+    const pause = sign.length === 1 ? 700 : 1000;
+    await new Promise(r => setTimeout(r, pause));
+  }
+
+  document.getElementById('avatarStatus').textContent = 'Done — ' + Object.keys(HAND_POSES).length + ' signs loaded';
+  document.getElementById('avatarLabel').textContent = 'Real dataset poses';
+  isAnimating = false;
+}
+
+document.getElementById('textInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') translateText();
+});
+</script>
+</body>
+</html>
