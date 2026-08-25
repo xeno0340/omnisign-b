@@ -6,9 +6,9 @@ from mediapipe.tasks.python import vision
 import time
 import cv2
 
-MODEL_PATH = r"D:\Projects\omnisign-b\asl_model.pkl"
-LABELS_PATH = r"D:\Projects\omnisign-b\asl_labels.pkl"
-TASK_FILE = r"D:\Projects\omnisign-b\hand_landmarker.task"
+MODEL_PATH = r"C:\Projects\omnisign-b\asl_model.pkl"
+LABELS_PATH = r"C:\Projects\omnisign-b\asl_labels.pkl"
+TASK_FILE = r"C:\Projects\omnisign-b\hand_landmarker.task"
 
 CONNECTIONS = [
     (0,1),(1,2),(2,3),(3,4),

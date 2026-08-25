@@ -76,7 +76,7 @@ async def emergency():
 
 @app.get("/poses")
 def get_poses():
-    with open(r"D:\Projects\omnisign-b\hand_poses.json") as f:
+    with open(r"C:\Projects\omnisign-b\hand_poses.json") as f:
         return json.load(f)
 
 @app.get("/health")

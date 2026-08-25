@@ -6,9 +6,9 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-DATA_DIR = r"D:\Projects\omnisign-b\data\asl_alphabet\asl_alphabet_train\asl_alphabet_train"
-POSES_OUT = r"D:\Projects\omnisign-b\hand_poses.json"
-TASK_FILE = r"D:\Projects\omnisign-b\hand_landmarker.task"
+DATA_DIR = r"C:\Projects\omnisign-b\data\asl_alphabet\asl_alphabet_train\asl_alphabet_train"
+POSES_OUT = r"C:\Projects\omnisign-b\hand_poses.json"
+TASK_FILE = r"C:\Projects\omnisign-b\hand_landmarker.task"
 
 base_options = python.BaseOptions(model_asset_path=TASK_FILE)
 options = vision.HandLandmarkerOptions(

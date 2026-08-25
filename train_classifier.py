@@ -10,10 +10,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 # ─── CONFIG ───────────────────────────────────────────
-DATA_DIR = r"D:\Projects\omnisign-b\data\asl_alphabet\asl_alphabet_train\asl_alphabet_train"
-MODEL_OUT = r"D:\Projects\omnisign-b\asl_model.pkl"
-LABELS_OUT = r"D:\Projects\omnisign-b\asl_labels.pkl"
-TASK_FILE = r"D:\Projects\omnisign-b\hand_landmarker.task"
+DATA_DIR = r"C:\Projects\omnisign-b\data\asl_alphabet\asl_alphabet_train\asl_alphabet_train"
+MODEL_OUT = r"C:\Projects\omnisign-b\asl_model.pkl"
+LABELS_OUT = r"C:\Projects\omnisign-b\asl_labels.pkl"
+TASK_FILE = r"C:\Projects\omnisign-b\hand_landmarker.task"
 
 SKIP = {"del", "nothing", "space"}
 IMAGES_PER_CLASS = 500

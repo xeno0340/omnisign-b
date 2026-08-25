@@ -1,6 +1,10 @@
+import os
 import sys
-sys.path.insert(0, r"D:\Projects\omnisign-b")
-sys.path.insert(0, r"D:\Projects\omnisign-b\emotion_app\emotion_app")
+
+_here = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(os.path.dirname(_here))
+sys.path.insert(0, _project_root)
+sys.path.insert(0, _here)
 
 import math
 import argparse
@@ -188,7 +192,7 @@ def main():
 
     face_options = FaceLandmarkerOptions(
         base_options=mp_python.BaseOptions(
-            model_asset_path=r"D:\Projects\omnisign-b\face_landmarker.task"
+                        model_asset_path=os.path.join(_project_root, "face_landmarker.task")
         ),
         num_faces=1,
         min_face_detection_confidence=0.5,

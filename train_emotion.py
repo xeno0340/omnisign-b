@@ -9,10 +9,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-DATA_DIR = r"D:\Projects\omnisign-b\data\fer2013\train"
-MODEL_OUT = r"D:\Projects\omnisign-b\emotion_model.pkl"
-LABELS_OUT = r"D:\Projects\omnisign-b\emotion_labels.pkl"
-TASK_FILE = r"D:\Projects\omnisign-b\face_landmarker.task"
+DATA_DIR = r"C:\Projects\omnisign-b\data\fer2013\train"
+MODEL_OUT = r"C:\Projects\omnisign-b\emotion_model.pkl"
+LABELS_OUT = r"C:\Projects\omnisign-b\emotion_labels.pkl"
+TASK_FILE = r"C:\Projects\omnisign-b\face_landmarker.task"
 
 IMAGES_PER_CLASS = 500
 

@@ -45,8 +45,11 @@ def _check_imports() -> None:
 def _run(camera_index: int) -> int:
     try:
         here = os.path.dirname(os.path.abspath(__file__))
-        if here not in sys.path:
-            sys.path.insert(0, here)
+        project_root = os.path.dirname(here)
+        inner_package = os.path.join(here, "emotion_app")
+        for p in (here, project_root, inner_package):
+            if p not in sys.path:
+                sys.path.insert(0, p)
 
         from emotion_app.main import open_camera  # type: ignore
 
